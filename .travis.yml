@@ -5,6 +5,9 @@ script:
 
 before_install:
   - cabal update
+  - git clone https://github.com/alpmestan/taggy.git
+  - cabal sandbox init
+  - cabal sandbox add-source taggy/
 
 install:
   - cabal install --only-dependencies
