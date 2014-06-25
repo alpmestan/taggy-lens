@@ -1,0 +1,23 @@
+name:                taggy-lens
+version:             0.1.0.0
+synopsis:            Lenses for taggy, another HTML parser outputting tag lists or a node tree
+description:         Lenses for <http://hackage.haskell.org/package/taggy taggy>
+homepage:            http://github.com/alpmestan/taggy-lens
+license:             BSD3
+license-file:        LICENSE
+author:              Alp Mestanogullari
+maintainer:          alpmestan@gmail.com
+copyright:           2014 Alp Mestanogullari
+category:            Text
+build-type:          Simple
+-- extra-source-files:  
+cabal-version:       >=1.10
+
+library
+  exposed-modules:     Text.Taggy.Lens
+  build-depends:       base >=4.5 && <5,
+                       taggy == 0.1.*,
+                       lens >= 4
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  ghc-options:         -O2 -Wall
