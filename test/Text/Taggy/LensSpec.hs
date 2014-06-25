@@ -5,9 +5,8 @@ module Text.Taggy.LensSpec (spec) where
 import Control.Lens ((^.),(.~),at)
 import Data.Monoid ((<>))
 import Data.HashMap.Strict (fromList)
-import Text.Taggy.Lens (eltName, eltAttrs, eltChildren)
-import Text.Taggy.DOM (domify, Element, Node(NodeElement))
-import qualified Text.Taggy.DOM as DOM (Element(..))
+import Text.Taggy.Lens (name, attrs, children)
+import Text.Taggy.DOM (domify, Element(..), Node(NodeElement))
 import Text.Taggy.Parser (taggyWith)
 import Test.Hspec (describe, it, shouldBe, Spec)
   
@@ -17,24 +16,24 @@ document = (\(NodeElement e) -> e) . head . domify . taggyWith False $
 
 spec :: Spec
 spec = do
-  describe "eltName" $ do
+  describe "name" $ do
     it "Should get the name of a given element." $ do
-      document ^. eltName `shouldBe` "html"
+      document ^. name `shouldBe` "html"
     it "Should set the name of the given element." $ do
-      let document' = eltName .~ "sgml" $ document
-      DOM.eltName document' `shouldBe` "sgml"
-  describe "eltAttrs" $ do
+      let document' = name .~ "sgml" $ document
+      eltName document' `shouldBe` "sgml"
+  describe "attrs" $ do
     it "Should get the attributes of a given element." $ do
-      document ^. eltAttrs ^. at "xmlns" `shouldBe` Just "http://www.w3.org/1999/xhtml"
-      document ^. eltAttrs ^. at "style" `shouldBe` Nothing
+      document ^. attrs ^. at "xmlns" `shouldBe` Just "http://www.w3.org/1999/xhtml"
+      document ^. attrs ^. at "style" `shouldBe` Nothing
     it "Should set the attributes of a given element." $ do
-      let attributes = DOM.eltAttrs document <> fromList [("style", "body { font-family: 'Comic Sans MS' }")]
-          document'  = eltAttrs .~ attributes $ document
-      DOM.eltAttrs document' `shouldBe` attributes
-  describe "eltChildren" $ do
+      let attributes = eltAttrs document <> fromList [("style", "body { font-family: 'Comic Sans MS' }")]
+          document'  = attrs .~ attributes $ document
+      eltAttrs document' `shouldBe` attributes
+  describe "children" $ do
     it "Should get child nodes of the given element." $ do
-      document ^. eltChildren `shouldBe` []
+      document ^. children `shouldBe` []
     it "Should set the child nodes of a given element." $ do
-      let children  = domify $ taggyWith False "<a>bar</a>"
-          document' = eltChildren .~ children $ document
-      DOM.eltChildren document' `shouldBe` children
+      let elements  = domify $ taggyWith False "<a>bar</a>"
+          document' = children .~ elements $ document
+      eltChildren document' `shouldBe` elements

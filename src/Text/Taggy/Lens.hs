@@ -1,20 +1,19 @@
 module Text.Taggy.Lens (
-  eltName, 
-  eltAttrs, 
-  eltChildren
+  name,
+  attrs,
+  children
 ) where
 
 import Control.Lens (Lens', (<&>))
 import Data.HashMap.Strict (HashMap)
 import Data.Text (Text)
-import Text.Taggy.DOM (Element, Node)
-import qualified Text.Taggy.DOM as DOM (Element(..))
+import Text.Taggy.DOM (Element(..), Node)
 
-eltName :: Lens' Element Text
-eltName f el = f (DOM.eltName el) <&> \name -> el {DOM.eltName=name}
+name :: Lens' Element Text
+name f el = f (eltName el) <&> \n -> el {eltName=n}
 
-eltAttrs :: Lens' Element (HashMap Text Text)
-eltAttrs f el = f (DOM.eltAttrs el) <&> \attrs -> el {DOM.eltAttrs=attrs}
+attrs :: Lens' Element (HashMap Text Text)
+attrs f el = f (eltAttrs el) <&> \as -> el {eltAttrs=as}
 
-eltChildren :: Lens' Element [Node]
-eltChildren f el = f (DOM.eltChildren el) <&> \children -> el {DOM.eltChildren = children}
+children :: Lens' Element [Node]
+children f el = f (eltChildren el) <&> \cs -> el {eltChildren = cs}
