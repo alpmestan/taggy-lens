@@ -1,16 +1,12 @@
 language: haskell
 
 script:
-  - cabal install --only-dependencies && cabal configure --enable-tests && cabal build && cabal test
+  - cabal configure --enable-tests && cabal test
 
 before_install:
-  - cabal update
   - git clone https://github.com/alpmestan/taggy.git
   - cabal sandbox init
   - cabal sandbox add-source taggy/
-
-install:
-  - cabal install --only-dependencies
   
 notifications:
   email:
