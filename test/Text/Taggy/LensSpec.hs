@@ -2,38 +2,49 @@
 
 module Text.Taggy.LensSpec (spec) where
 
-import Control.Lens ((^.),(.~),at)
-import Data.Monoid ((<>))
+import Control.Lens ((^.),(.~),at,(^?),re)
 import Data.HashMap.Strict (fromList)
-import Text.Taggy.Lens (name, attrs, children)
+import Data.Monoid ((<>))
+import Data.Text.Lazy (Text)
+import Text.Taggy.Lens (name, attrs, children, html)
 import Text.Taggy.DOM (domify, Element(..), Node(NodeElement))
 import Text.Taggy.Parser (taggyWith)
 import Test.Hspec (describe, it, shouldBe, Spec)
+
+markup :: Text
+markup = "<html xmlns=\"http://www.w3.org/1999/xhtml\"></html>"
+
+node :: Node -- unsafe (head)
+node = head . domify $ taggyWith False markup
   
-document :: Element  
-document = (\(NodeElement e) -> e) . head . domify . taggyWith False $
-  "<html xmlns=\"http://www.w3.org/1999/xhtml\"></html>"
+element :: Element -- unsafe (partial)
+element = (\(NodeElement e) -> e) node
 
 spec :: Spec
 spec = do
+  describe "html" $ do
+    it "Should parse given Text into a single root node." $ do
+      markup ^? html `shouldBe` Just node
+    it "Should render a given root node into text." $ do
+      node ^. re html `shouldBe` markup
   describe "name" $ do
     it "Should get the name of a given element." $ do
-      document ^. name `shouldBe` "html"
+      element ^. name `shouldBe` "html"
     it "Should set the name of the given element." $ do
-      let document' = name .~ "sgml" $ document
-      eltName document' `shouldBe` "sgml"
+      let element' = name .~ "sgml" $ element
+      eltName element' `shouldBe` "sgml"
   describe "attrs" $ do
     it "Should get the attributes of a given element." $ do
-      document ^. attrs ^. at "xmlns" `shouldBe` Just "http://www.w3.org/1999/xhtml"
-      document ^. attrs ^. at "style" `shouldBe` Nothing
+      element ^. attrs ^. at "xmlns" `shouldBe` Just "http://www.w3.org/1999/xhtml"
+      element ^. attrs ^. at "style" `shouldBe` Nothing
     it "Should set the attributes of a given element." $ do
-      let attributes = eltAttrs document <> fromList [("style", "body { font-family: 'Comic Sans MS' }")]
-          document'  = attrs .~ attributes $ document
-      eltAttrs document' `shouldBe` attributes
+      let attributes = eltAttrs element <> fromList [("style", "body { font-family: 'Comic Sans MS' }")]
+          element'  = attrs .~ attributes $ element
+      eltAttrs element' `shouldBe` attributes
   describe "children" $ do
     it "Should get child nodes of the given element." $ do
-      document ^. children `shouldBe` []
+      element ^. children `shouldBe` []
     it "Should set the child nodes of a given element." $ do
       let elements  = domify $ taggyWith False "<a>bar</a>"
-          document' = children .~ elements $ document
-      eltChildren document' `shouldBe` elements
+          element' = children .~ elements $ element
+      eltChildren element' `shouldBe` elements
