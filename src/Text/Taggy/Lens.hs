@@ -10,11 +10,11 @@ module Text.Taggy.Lens (
   content
 ) where
 
-import Control.Lens (Lens', Prism', prism', (<&>), (^?), ix)
+import Control.Lens (Lens', Prism', prism', (<&>), preview, ix)
 import Data.HashMap.Strict (HashMap)
 import Data.Text (Text)
 import qualified Data.Text.Lazy as Lazy (Text)
-import Text.Taggy (Element(..), Node(..), render, domify, taggyWith)
+import Text.Taggy (Element(..), Node(..), Renderable(..), domify, taggyWith)
 
 -- | HTML document parsing and rendering.
 -- 
@@ -38,8 +38,8 @@ import Text.Taggy (Element(..), Node(..), render, domify, taggyWith)
 -- True
 
 htmlWith :: Bool -> Prism' Lazy.Text Node 
-htmlWith convertEntities = prism' render parse
-  where parse = (^? ix 0) . domify . taggyWith convertEntities
+htmlWith convertEntities = prism' (renderWith convertEntities)  parse
+  where parse = preview (ix 0) . domify . taggyWith convertEntities
 
 -- | Like 'htmlWith', but converts named entities by default.
 -- 
@@ -98,7 +98,7 @@ element =  prism' NodeElement $ \case { NodeElement e -> Just e; _ -> Nothing }
 
 -- | Construct a node from text, or attempt to extract text from a node.
 --
--- >>> let markup = "<foo>bar</foo>"
+-- >>> let markup = "<foo>bar</foo>" :: Lazy.Text
 -- >>> markup ^? html . element . children . traverse . content
 -- Just "bar"
 -- >>> markup & html . element . children . traverse . content .~ "baz"

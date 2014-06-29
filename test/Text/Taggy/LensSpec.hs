@@ -3,11 +3,11 @@
 module Text.Taggy.LensSpec (spec) where
 
 import Prelude hiding (elem)
-import Control.Lens ((^.),(.~),at,(^?),re)
+import Control.Lens ((^.),(.~),at,(^?),re,_Just)
 import Data.HashMap.Strict (fromList)
 import Data.Monoid ((<>))
 import Data.Text.Lazy (Text)
-import Text.Taggy.Lens (name, attrs, children, html, element, content)
+import Text.Taggy.Lens (name, attrs, children, html, htmlWith, element, content)
 import Text.Taggy.DOM (domify, Element(..), Node(..))
 import Text.Taggy.Parser (taggyWith)
 import Test.Hspec (describe, it, shouldBe, Spec)
@@ -28,6 +28,13 @@ spec = do
       markup ^? html `shouldBe` Just node
     it "Should render a given root node into text." $ do
       node ^. re html `shouldBe` markup
+    it "Should escape HTML entities in rendering." $ do
+      "&" ^? html ^. _Just . re html `shouldBe` "&amp;"
+  describe "htmlWith" $ do
+    it "When parametrised with False, should not escape HTML entities in parsing." $ do
+      "&" ^? htmlWith False `shouldBe` Just (NodeContent "&")
+    it "When parametrised with False, should not escape HTML entities in rendering." $ do
+      "&" ^? htmlWith False ^. _Just . re (htmlWith False) `shouldBe` "&"
   describe "name" $ do
     it "Should get the name of a given element." $ do
       elem ^. name `shouldBe` "html"

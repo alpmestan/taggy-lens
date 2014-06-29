@@ -1,2 +1,1 @@
-* htmlWith:render should respect convertEntities; I think this requires a commit upstream.
 * A traversals such that we can simply (with composition): provided a node, collect all child-elements matching {has,hasn't}.
