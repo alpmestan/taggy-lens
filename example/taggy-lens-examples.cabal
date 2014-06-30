@@ -1,0 +1,22 @@
+name:                taggy-lens-examples
+version:             0.1.0.0
+license:             BSD3
+license-file:        LICENSE
+author:              vi
+maintainer:          vi@zalora.com
+category:            Example
+build-type:          Simple
+cabal-version:       >=1.10
+
+executable hackage-new
+  main-is:             HackageNew.hs
+  other-extensions:    OverloadedStrings
+  build-depends:       base,
+                       bytestring,
+                       http-client,
+                       lens,
+                       taggy,
+                       taggy-lens,
+                       text,
+                       wreq
+  default-language:    Haskell2010
