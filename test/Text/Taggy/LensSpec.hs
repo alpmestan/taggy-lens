@@ -45,7 +45,7 @@ spec = do
   describe "named" $ do
     it "Should traverse only elements who's name matches a specific property." $ do
       let markup' = "<html><foo>bar</foo><baz>qux</baz><quux>corge</quux></html>"
-      markup' ^.. htmlWith False . element . elements . named (to length . only 3) . name `shouldBe` ["foo", "baz"]
+      markup' ^.. htmlWith False . elements . named (to length . only 3) . name `shouldBe` ["foo", "baz"]
   describe "attrs" $ do
     it "Should get the attributes of a given element." $ do
       elem ^. attrs ^. at "xmlns" `shouldBe` Just "http://www.w3.org/1999/xhtml"
@@ -80,9 +80,12 @@ spec = do
       node ^? element `shouldBe` Just elem
       NodeContent text ^? element `shouldBe` Nothing
   describe "elements" $ do
-    it "Should traverse the immediate children of an element that are also elements." $ do
+    it "Should traverse the immediate children of an element that are also elements directly." $ do
       let markup' = "<html><foo></foo><bar></bar><baz></baz></html>"
       markup' ^.. html . element . elements . name `shouldBe` ["foo", "bar", "baz"]
+    it "Should traverse the immediate children of an element that are also elements, via a node." $ do
+      let markup' = "<html><foo></foo><bar></bar><baz></baz></html>"
+      markup' ^.. html . elements . name `shouldBe` ["foo", "bar", "baz"]
   describe "content" $ do
     it "Should lift provided Text into a Node." $ do
       text ^. re content `shouldBe` NodeContent text
@@ -90,6 +93,9 @@ spec = do
       node ^? content `shouldBe` Nothing
       NodeContent text ^? content `shouldBe` Just text
   describe "contents" $ do
-    it "Should traverse the immediate children of an element that are text nodes." $ do
+    it "Should traverse the immediate children of an element that are text nodes directly." $ do
       let markup' = "<html><foo></foo>bar<baz></baz>qux</html>" 
       markup' ^.. html . element . contents `shouldBe` ["bar", "qux"]
+    it "Should traverse the immediate children of an element that are text nodes, via a Node." $ do
+      let markup' = "<html><foo></foo>bar<baz></baz>qux</html>" 
+      markup' ^.. html . contents `shouldBe` ["bar", "qux"]

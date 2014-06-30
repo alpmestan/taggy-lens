@@ -60,7 +60,7 @@ html = htmlWith True
 -- Just "html"
 -- >>> markup & html . element . name .~ "sgml"
 -- "<sgml><head><title>My Page</title></head><body><blink>Hello, world!</blink></body></sgml>"
--- >>> markup ^.. html . element . elements . name
+-- >>> markup ^.. html . elements . name
 -- ["head", "body"]
 
 name :: Lens' Element Text
@@ -84,7 +84,7 @@ attrs f el = f (eltAttrs el) <&> \as -> el {eltAttrs=as}
 -- | Given an attribute name, a lens into its value for a given element.
 --
 -- >>> let markup = "<html><foo class=\"a\"></foo><bar class=\"b\"></bar></html>" :: Lazy.Text
--- >>> markup ^.. htmlWith False . element . elements . attr "class" . _Just
+-- >>> markup ^.. htmlWith False . elements . attr "class" . _Just
 -- ["a", "b"]
 
 attr :: Text -> Lens' Element (Maybe Text)
@@ -93,7 +93,7 @@ attr = fmap attrs . at
 -- | A traversal into attributes matching a provided property.
 --
 -- >>> let markup = "<html><foo class=\"a\"></foo><bar class=\"a\"></bar></html>" :: Lazy.Text
--- >>> markup ^.. htmlWith False . element . elements . attributed (ix "class" . only "a") . name
+-- >>> markup ^.. htmlWith False . elements . attributed (ix "class" . only "a") . name
 -- ["foo", "bar"]
 
 attributed :: Fold (HashMap Text Text) a -> Traversal' Element Element
@@ -113,7 +113,7 @@ children f el = f (eltChildren el) <&> \cs -> el {eltChildren = cs}
 -- | A traversal into elements with a name matching a provided property.
 --
 -- >>> let markup = "<html><foo>bar</foo><baz>qux</baz><quux>corge</quux></html>" :: Lazy.Text
--- >>> markup ^.. htmlWith False . element . elements . named (to length . only 3) . name
+-- >>> markup ^.. htmlWith False . elements . named (to length . only 3) . name
 -- ["foo", "baz"]
 
 named :: Fold Text a -> Traversal' Element Element
@@ -130,31 +130,47 @@ named prop = filtered . has $ name . prop
 element :: Prism' Node Element
 element =  prism' NodeElement $ \case { NodeElement e -> Just e; _ -> Nothing }
 
--- | A traversal into the immediate children of an element that are also elements.
+-- | A traversal into the immediate children of an element that are also elements, directly or via a Node.
 -- 
 -- >>> let markup = "<html><foo></foo><bar></bar><baz></baz></html>"
 -- >>> markup ^.. html . element . elements . traverse . name
 -- ["foo", "bar", "baz"]
+-- >>> markup ^.. html . elements . traverse . name
+-- ["foo", "bar", "baz"]
 
-elements :: Traversal' Element Element
-elements = children . traverse . element
+class HasElements a where
+  elements :: Traversal' a Element
+
+instance HasElements Element where
+  elements = children . traverse . element
+
+instance HasElements Node where
+  elements = element . elements
 
 -- | Construct a node from text, or attempt to extract text from a node.
 --
 -- >>> let markup = "<foo>bar</foo>" :: Lazy.Text
--- >>> markup ^? html . element . contents
+-- >>> markup ^? html . element . children . traverse . content
 -- Just "bar"
--- >>> markup & html . element . contents .~ "baz"
+-- >>> markup & html . element . children . traverse . content .~ "baz"
 -- "<foo>baz</foo>"
 
 content :: Prism' Node Text
 content = prism' NodeContent $ \case { NodeContent c -> Just c; _ -> Nothing }
 
--- | A traversal into the immediate children of an element that are text content.
+-- | A traversal into the immediate children of an element that are text content, directly or via a Node.
 --
 -- >>> let markup = "<html><foo></foo>bar<baz></baz>qux</html>"
 -- >>> markup ^.. html . element . contents
 -- ["bar", "qux"]
+-- >>> markup ^.. html . contents
+-- ["bar", "qux"]
 
-contents :: Traversal' Element Text
-contents = children . traverse . content
+class HasContent a where
+  contents :: Traversal' a Text
+
+instance HasContent Element where
+  contents = children . traverse . content
+
+instance HasContent Node where
+  contents = element . contents
