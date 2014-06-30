@@ -3,7 +3,7 @@
 module Text.Taggy.LensSpec (spec) where
 
 import Prelude hiding (elem, length)
-import Control.Lens ((^.),(.~),at,(^?),re,_Just,(&),(?~),to,folded,(^..),only,traverse)
+import Control.Lens ((^.),(.~),at,(^?),re,_Just,(&),(?~),to,folded,(^..),only)
 import Data.HashMap.Strict (fromList)
 import Data.Monoid ((<>))
 import Data.Text (isSuffixOf, length)
@@ -45,7 +45,7 @@ spec = do
   describe "named" $ do
     it "Should traverse only elements who's name matches a specific property." $ do
       let markup' = "<html><foo>bar</foo><baz>qux</baz><quux>corge</quux></html>"
-      markup' ^.. htmlWith False . element . children . traverse . element . named (to length . only 3) . name `shouldBe` ["foo", "baz"]
+      markup' ^.. htmlWith False . element . elements . named (to length . only 3) . name `shouldBe` ["foo", "baz"]
   describe "attrs" $ do
     it "Should get the attributes of a given element." $ do
       elem ^. attrs ^. at "xmlns" `shouldBe` Just "http://www.w3.org/1999/xhtml"

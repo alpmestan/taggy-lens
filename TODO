@@ -1,1 +1,0 @@
-* A traversals such that we can simply (with composition): provided a node, collect all child-elements matching {has,hasn't}.
