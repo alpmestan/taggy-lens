@@ -10,10 +10,12 @@ module Text.Taggy.Lens (
   content,
   attr,
   attributed,
-  named
+  named,
+  elements,
+  contents
 ) where
 
-import Control.Lens (Lens', Prism', Traversal', Fold, prism', (<&>), preview, ix, at, has, filtered)
+import Control.Lens (Lens', Prism', Traversal', Fold, prism', (<&>), preview, ix, at, has, filtered, traverse)
 import Data.HashMap.Strict (HashMap)
 import Data.Text (Text)
 import qualified Data.Text.Lazy as Lazy (Text)
@@ -95,7 +97,7 @@ attr = fmap attrs . at
 attributed :: Fold (HashMap Text Text) a -> Traversal' Element Element
 attributed prop = filtered . has $ attrs . prop
 
--- | A lens into the child nodes of a given DOM element.
+-- | A lens into the child nodes, elements, or contents of a given DOM element.
 --
 -- >>> let markup = "<html><title>Your title goes here.</title><body>Your content goes here.</body></html>" :: Lazy.Text
 -- >>> markup ^? html . element . children . ix 0
@@ -126,6 +128,15 @@ named prop = filtered . has $ name . prop
 element :: Prism' Node Element
 element =  prism' NodeElement $ \case { NodeElement e -> Just e; _ -> Nothing }
 
+-- | A traversal into the immediate children of an element that are also elements.
+-- 
+-- >>> let markup = "<html><foo></foo><bar></bar><baz></baz></html>"
+-- >>> markup ^.. html . element . elements . traverse . name
+-- ["foo", "bar", "baz"]
+
+elements :: Traversal' Element Element
+elements = children . traverse . element
+
 -- | Construct a node from text, or attempt to extract text from a node.
 --
 -- >>> let markup = "<foo>bar</foo>" :: Lazy.Text
@@ -136,3 +147,12 @@ element =  prism' NodeElement $ \case { NodeElement e -> Just e; _ -> Nothing }
 
 content :: Prism' Node Text
 content = prism' NodeContent $ \case { NodeContent c -> Just c; _ -> Nothing }
+
+-- | A traversal into the immediate children of an element that are text content.
+--
+-- >>> let markup = "<html><foo></foo>bar<baz></baz>qux</html>"
+-- >>> markup ^.. html . element . contents
+-- ["bar", "qux"]
+
+contents :: Traversal' Element Text
+contents = children . traverse . content

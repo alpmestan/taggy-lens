@@ -8,7 +8,7 @@ import Data.HashMap.Strict (fromList)
 import Data.Monoid ((<>))
 import Data.Text (isSuffixOf, length)
 import Data.Text.Lazy (Text)
-import Text.Taggy.Lens (name, attrs, children, html, htmlWith, element, content, attr, attributed, named)
+import Text.Taggy.Lens (name, attrs, children, html, htmlWith, element, content, attr, attributed, named, contents, elements)
 import Text.Taggy.DOM (domify, Element(..), Node(..))
 import Text.Taggy.Parser (taggyWith)
 import Test.Hspec (describe, it, shouldBe, Spec)
@@ -79,9 +79,17 @@ spec = do
     it "Should try to extract an Element from a given Node." $ do
       node ^? element `shouldBe` Just elem
       NodeContent text ^? element `shouldBe` Nothing
+  describe "elements" $ do
+    it "Should traverse the immediate children of an element that are also elements." $ do
+      let markup' = "<html><foo></foo><bar></bar><baz></baz></html>"
+      markup' ^.. html . element . elements . name `shouldBe` ["foo", "bar", "baz"]
   describe "content" $ do
     it "Should lift provided Text into a Node." $ do
       text ^. re content `shouldBe` NodeContent text
     it "Should try to extract Text from a given node." $ do
       node ^? content `shouldBe` Nothing
       NodeContent text ^? content `shouldBe` Just text
+  describe "contents" $ do
+    it "Should traverse the immediate children of an element that are text nodes." $ do
+      let markup' = "<html><foo></foo>bar<baz></baz>qux</html>" 
+      markup' ^.. html . element . contents `shouldBe` ["bar", "qux"]
