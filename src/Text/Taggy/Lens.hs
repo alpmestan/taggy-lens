@@ -7,10 +7,13 @@ module Text.Taggy.Lens (
   htmlWith,
   html,
   element,
-  content
+  content,
+  attr,
+  attributed,
+  named
 ) where
 
-import Control.Lens (Lens', Prism', prism', (<&>), preview, ix)
+import Control.Lens (Lens', Prism', Traversal', Fold, prism', (<&>), preview, ix, at, has, filtered)
 import Data.HashMap.Strict (HashMap)
 import Data.Text (Text)
 import qualified Data.Text.Lazy as Lazy (Text)
@@ -26,7 +29,7 @@ import Text.Taggy (Element(..), Node(..), Renderable(..), domify, taggyWith)
 -- 
 -- The provided boolean specifies whether named entities should be
 -- translated to unicode. For a less general version of this prism,
--- with translation by default, see 'htmlWith.'
+-- with translation by default, see 'html.'
 -- 
 -- >>> (True, False) & both %~ \convert -> "<span>&hearts;</span>" ^? htmlWith convert . element . children . ix 0 . content
 -- (Just "\9829", Just "&hearts;")
@@ -74,6 +77,24 @@ name f el = f (eltName el) <&> \n -> el {eltName=n}
 attrs :: Lens' Element (HashMap Text Text)
 attrs f el = f (eltAttrs el) <&> \as -> el {eltAttrs=as}
 
+-- | Given an attribute name, a lens into its value for a given element.
+--
+-- >>> let markup = "<html><foo class=\"a\"></foo><bar class=\"b\"></bar></html>" :: Lazy.Text
+-- >>> markup ^.. htmlWith False . element . children . traverse . element . attr "class" . _Just
+-- ["a", "b"]
+
+attr :: Text -> Lens' Element (Maybe Text)
+attr = fmap attrs . at
+
+-- | A traversal into attributes matching a provided property.
+--
+-- >>> let markup = "<html><foo class=\"a\"></foo><bar class=\"a\"></bar></html>" :: Lazy.Text
+-- >>> markup ^.. htmlWith False . element . children . traverse . element . attributed (ix "class" . only "a") . name
+-- ["foo", "bar"]
+
+attributed :: Fold (HashMap Text Text) a -> Traversal' Element Element
+attributed prop = filtered . has $ attrs . prop
+
 -- | A lens into the child nodes of a given DOM element.
 --
 -- >>> let markup = "<html><title>Your title goes here.</title><body>Your content goes here.</body></html>" :: Lazy.Text
@@ -84,6 +105,15 @@ attrs f el = f (eltAttrs el) <&> \as -> el {eltAttrs=as}
 
 children :: Lens' Element [Node]
 children f el = f (eltChildren el) <&> \cs -> el {eltChildren = cs}
+
+-- | A traversal into elements with a name matching a provided property.
+--
+-- >>> let markup = "<html><foo>bar</foo><baz>qux</baz><quux>corge</quux></html>" :: Lazy.Text
+-- >>> markup ^.. htmlWith False . element . children . traverse . element . name (to length . only 3) . name
+-- ["foo", "baz"]
+
+named :: Fold Text a -> Traversal' Element Element
+named prop = filtered . has $ name . prop
 
 -- | Construct a node from an element, or attempt to extract an element from a node.
 --

@@ -2,12 +2,13 @@
 
 module Text.Taggy.LensSpec (spec) where
 
-import Prelude hiding (elem)
-import Control.Lens ((^.),(.~),at,(^?),re,_Just)
+import Prelude hiding (elem, length)
+import Control.Lens ((^.),(.~),at,(^?),re,_Just,(&),(?~),to,folded,(^..),only,traverse)
 import Data.HashMap.Strict (fromList)
 import Data.Monoid ((<>))
+import Data.Text (isSuffixOf, length)
 import Data.Text.Lazy (Text)
-import Text.Taggy.Lens (name, attrs, children, html, htmlWith, element, content)
+import Text.Taggy.Lens (name, attrs, children, html, htmlWith, element, content, attr, attributed, named)
 import Text.Taggy.DOM (domify, Element(..), Node(..))
 import Text.Taggy.Parser (taggyWith)
 import Test.Hspec (describe, it, shouldBe, Spec)
@@ -41,14 +42,29 @@ spec = do
     it "Should set the name of the given element." $ do
       let element' = name .~ "sgml" $ elem
       eltName element' `shouldBe` "sgml"
+  describe "named" $ do
+    it "Should traverse only elements who's name matches a specific property." $ do
+      let markup' = "<html><foo>bar</foo><baz>qux</baz><quux>corge</quux></html>"
+      markup' ^.. htmlWith False . element . children . traverse . element . named (to length . only 3) . name `shouldBe` ["foo", "baz"]
   describe "attrs" $ do
     it "Should get the attributes of a given element." $ do
       elem ^. attrs ^. at "xmlns" `shouldBe` Just "http://www.w3.org/1999/xhtml"
       elem ^. attrs ^. at "style" `shouldBe` Nothing
     it "Should set the attributes of a given element." $ do
       let attributes = eltAttrs elem <> fromList [("style", "body { font-family: 'Comic Sans MS' }")]
-          element'  = attrs .~ attributes $ elem
+          element'   = attrs .~ attributes $ elem
       eltAttrs element' `shouldBe` attributes
+  describe "attr" $ do
+    it "Should get the value of a named attribute." $ do
+      elem ^. attr "xmlns" `shouldBe` Just "http://www.w3.org/1999/xhtml"
+      elem ^. attr "style" `shouldBe` Nothing
+    it "Should set the value of a named attribute." $ do
+      let style    = "body { font-family: 'Comic Sans MS' }"
+          element' = elem & attr "style" ?~ style
+      element' ^. attr "style" `shouldBe` Just style
+  describe "attributed" $ do
+    it "Should traverse only attributes satisfying a given property." $ do
+      elem ^? attributed (folded . to (isSuffixOf "xhtml")) `shouldBe` Just elem
   describe "children" $ do
     it "Should get child nodes of the given element." $ do
       elem ^. children `shouldBe` []
