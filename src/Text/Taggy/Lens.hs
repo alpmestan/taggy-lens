@@ -15,11 +15,11 @@ module Text.Taggy.Lens (
   contents
 ) where
 
-import Control.Lens (Lens', Prism', Traversal', Fold, prism', (<&>), preview, ix, at, has, filtered, traverse)
+import Control.Lens (Lens', Prism', Traversal', Fold, prism', (<&>), preview, ix, at, has, filtered, traverse, Plated(..))
 import Data.HashMap.Strict (HashMap)
 import Data.Text (Text)
-import qualified Data.Text.Lazy as Lazy (Text)
 import Text.Taggy (Element(..), Node(..), Renderable(..), domify, taggyWith)
+import qualified Data.Text.Lazy as Lazy (Text)
 
 -- | HTML document parsing and rendering.
 -- 
@@ -132,7 +132,7 @@ element =  prism' NodeElement $ \case { NodeElement e -> Just e; _ -> Nothing }
 
 -- | A traversal into the immediate children of an element that are also elements, directly or via a Node.
 -- 
--- >>> let markup = "<html><foo></foo><bar></bar><baz></baz></html>"
+-- >>> let markup = "<html><foo></foo><bar></bar><baz></baz></html>" :: Lazy.Text
 -- >>> markup ^.. html . element . elements . traverse . name
 -- ["foo", "bar", "baz"]
 -- >>> markup ^.. html . elements . traverse . name
@@ -160,7 +160,7 @@ content = prism' NodeContent $ \case { NodeContent c -> Just c; _ -> Nothing }
 
 -- | A traversal into the immediate children of an element that are text content, directly or via a Node.
 --
--- >>> let markup = "<html><foo></foo>bar<baz></baz>qux</html>"
+-- >>> let markup = "<html><foo></foo>bar<baz></baz>qux</html>" :: Lazy.Text
 -- >>> markup ^.. html . element . contents
 -- ["bar", "qux"]
 -- >>> markup ^.. html . contents
@@ -174,3 +174,11 @@ instance HasContent Element where
 
 instance HasContent Node where
   contents = element . contents
+
+-- | Plated instances are available for Element and Node, such that we can retrieve all of their transitive descendants.
+
+instance Plated Node where
+  plate = element . children . traverse
+
+instance Plated Element where
+  plate = elements

@@ -3,7 +3,7 @@
 module Text.Taggy.LensSpec (spec) where
 
 import Prelude hiding (elem, length)
-import Control.Lens ((^.),(.~),at,(^?),re,_Just,(&),(?~),to,folded,(^..),only,traverse)
+import Control.Lens ((^.),(.~),at,(^?),re,_Just,(&),(?~),to,folded,(^..),only,traverse,universe)
 import Data.HashMap.Strict (fromList)
 import Data.Monoid ((<>))
 import Data.Text (isSuffixOf, length)
@@ -99,3 +99,11 @@ spec = do
     it "Should traverse the immediate children of an element that are text nodes, via a Node." $ do
       let markup' = "<html><foo></foo>bar<baz></baz>qux</html>" 
       markup' ^.. html . contents `shouldBe` ["bar", "qux"]
+  describe "validation of plated instance for node" $ do 
+    let markup' = "<html><foo>foo</foo>bar<baz></baz>qux</html>" 
+    it "Should be able to retrieve all transitive descendants of a given node." $ do
+      markup' ^.. html . to universe . traverse . content `shouldBe` ["foo","bar","qux"]
+  describe "validation of plated instance for element" $ do
+    let markup' = "<html><foo></foo>bar<baz></baz>qux</html>" 
+    it "Should be able to retrieve all transitive descendants of a given node." $ do
+      markup' ^.. html . element . to universe . traverse . name `shouldBe` ["html","foo","baz"]
