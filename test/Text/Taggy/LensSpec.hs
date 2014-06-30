@@ -3,7 +3,7 @@
 module Text.Taggy.LensSpec (spec) where
 
 import Prelude hiding (elem, length)
-import Control.Lens ((^.),(.~),at,(^?),re,_Just,(&),(?~),to,folded,(^..),only)
+import Control.Lens ((^.),(.~),at,(^?),re,_Just,(&),(?~),to,folded,(^..),only,traverse)
 import Data.HashMap.Strict (fromList)
 import Data.Monoid ((<>))
 import Data.Text (isSuffixOf, length)
@@ -68,10 +68,10 @@ spec = do
   describe "children" $ do
     it "Should get child nodes of the given element." $ do
       elem ^. children `shouldBe` []
+      "<html><bar>qux</bar></html>" ^.. html . element . children . traverse . element . name `shouldBe` ["bar"]
     it "Should set the child nodes of a given element." $ do
-      let elements  = domify $ taggyWith False "<a>bar</a>"
-          element' = children .~ elements $ elem
-      eltChildren element' `shouldBe` elements
+      let subtree = taggyWith False "<a>bar</a>" & domify
+      eltChildren (elem & children .~ subtree) `shouldBe` subtree
   let text = "The quick brown fox jumps over the lazy dog."
   describe "element" $ do
     it "Should lift a given Element into a Node" $ do
