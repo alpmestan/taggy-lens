@@ -1,6 +1,8 @@
 {-# LANGUAGE LambdaCase, Rank2Types #-}
 
 module Text.Taggy.Lens (
+  Node(..),
+  Element(..),
   name,
   attrs,
   children,
