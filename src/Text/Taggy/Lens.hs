@@ -8,13 +8,13 @@ module Text.Taggy.Lens (
   children,
   htmlWith,
   html,
-  element,
+  HasElement(..),
   content,
   attr,
   attributed,
   named,
-  elements,
-  contents,
+  HasElements(..),
+  HasContent(..),
   allNamed,
   allAttributed
 ) where
