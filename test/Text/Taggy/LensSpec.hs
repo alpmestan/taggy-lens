@@ -8,7 +8,7 @@ import Data.HashMap.Strict (fromList)
 import Data.Monoid ((<>))
 import Data.Text (isSuffixOf, length)
 import Data.Text.Lazy (Text)
-import Text.Taggy.Lens (name, attrs, children, html, htmlWith, element, content, attr, attributed, named, contents, elements)
+import Text.Taggy.Lens (name, attrs, children, html, htmlWith, element, content, attr, attributed, named, contents, elements, allNamed, allAttributed)
 import Text.Taggy.DOM (domify, Element(..), Node(..))
 import Text.Taggy.Parser (taggyWith)
 import Test.Hspec (describe, it, shouldBe, Spec)
@@ -107,3 +107,11 @@ spec = do
     let markup' = "<html><foo></foo>bar<baz></baz>qux</html>" 
     it "Should be able to retrieve all transitive descendants of a given node." $ do
       markup' ^.. html . element . to universe . traverse . name `shouldBe` ["html","foo","baz"]
+  describe "allNamed" $ do
+    it "Should retrieve all nodes in a subtree who's name match a given predicate." $ do
+      let markup' = "<html><foo>bar<qux><foo>baz</foo></qux></foo></html>" 
+      markup' ^.. html . allNamed (only "foo") . contents `shouldBe` ["bar", "baz"]
+  describe "allAttributed" $ do
+    it "Should retrieve all nodes in a subtree who's attributes match a given predicate." $ do
+      let markup' = "<html><foo class=\"woah\">bar<qux class=\"woah\"></qux></foo><quux class=\"woah\"></quux></html>"
+      markup' ^.. html . allAttributed (folded . only "woah") . name `shouldBe` ["foo", "qux", "quux"]

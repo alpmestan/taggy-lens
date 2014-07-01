@@ -15,6 +15,7 @@ cabal-version:       >=1.10
 library
   exposed-modules:     Text.Taggy.Lens
   build-depends:       base >=4.5 && <5,
+                       contravariant,
                        taggy == 0.1.*,
                        text,
                        unordered-containers,
@@ -29,6 +30,7 @@ test-suite spec
   hs-source-dirs:   src, test
   main-is:          Spec.hs
   build-depends:    base >=4.5 && <5,
+                    contravariant,
                     lens >= 4,
                     taggy == 0.1.*,
                     text,

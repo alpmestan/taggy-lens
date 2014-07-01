@@ -12,10 +12,12 @@ module Text.Taggy.Lens (
   attributed,
   named,
   elements,
-  contents
+  contents,
+  allNamed,
+  allAttributed 
 ) where
 
-import Control.Lens (Lens', Prism', Traversal', Fold, prism', (<&>), preview, ix, at, has, filtered, traverse, Plated(..))
+import Control.Lens (Lens', Prism', Traversal', Fold, prism', (<&>), preview, ix, at, has, filtered, traverse, Plated(..), to, universe)
 import Data.HashMap.Strict (HashMap)
 import Data.Text (Text)
 import Text.Taggy (Element(..), Node(..), Renderable(..), domify, taggyWith)
@@ -182,3 +184,9 @@ instance Plated Node where
 
 instance Plated Element where
   plate = elements
+
+allNamed :: HasElements a => Fold Text b -> Fold a Element
+allNamed prop = elements . to universe . traverse . named prop
+
+allAttributed :: HasElements a => Fold (HashMap Text Text) b -> Fold a Element
+allAttributed prop = elements . to universe . traverse . attributed prop
