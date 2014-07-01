@@ -178,6 +178,10 @@ instance HasContent Node where
   contents = element . contents
 
 -- | Plated instances are available for Element and Node, such that we can retrieve all of their transitive descendants.
+--
+-- >>> let markup' = "<html><foo>foo</foo>bar<baz></baz>qux</html>" 
+-- >>> markup' ^.. html . to universe . traverse . content 
+-- ["foo","bar","qux"]
 
 instance Plated Node where
   plate = element . children . traverse
@@ -185,8 +189,20 @@ instance Plated Node where
 instance Plated Element where
   plate = elements
 
+-- | A fold into all descendant elements who's name satisfy a provided property.
+--
+-- >>> let markup' = "<html><foo>bar<qux><foo>baz</foo></qux></foo></html>" 
+-- >>> markup' ^.. html . allNamed (only "foo") . contents 
+-- ["bar", "baz"]
+
 allNamed :: HasElements a => Fold Text b -> Fold a Element
 allNamed prop = elements . to universe . traverse . named prop
+
+-- | A fold into all descendant elements who's attributes satisfy a provided property.
+--
+-- >>> let markup' = "<html><foo class=\"woah\">bar<qux class=\"woah\"></qux></foo><quux class=\"woah\"></quux></html>"
+-- >>> markup' ^.. html . allAttributed (folded . only "woah") . name 
+-- ["foo", "qux", "quux"]
 
 allAttributed :: HasElements a => Fold (HashMap Text Text) b -> Fold a Element
 allAttributed prop = elements . to universe . traverse . attributed prop
