@@ -16,7 +16,7 @@ module Text.Taggy.Lens (
   elements,
   contents,
   allNamed,
-  allAttributed 
+  allAttributed
 ) where
 
 import Control.Lens (Lens', Prism', Traversal', Fold, prism', (<&>), preview, ix, at, has, filtered, traverse, Plated(..), to, universe)
@@ -25,33 +25,43 @@ import Data.Text (Text)
 import Text.Taggy (Element(..), Node(..), Renderable(..), domify, taggyWith)
 import qualified Data.Text.Lazy as Lazy (Text)
 
+-- $setup
+-- >>> :set -XOverloadedStrings
+-- >>> import Control.Lens hiding (element, elements, children)
+-- >>> import qualified Data.Text.Lazy as Lazy (Text)
+-- >>> import Data.Monoid
+-- >>> import Data.Text as T
+-- >>> import Control.Monad (join)
+-- >>> import Data.Maybe
+
 -- | HTML document parsing and rendering.
--- 
+--
 -- >>> let markup = "<html><head><title>My Page</title></head><body><blink>Hello, world!</blink></body></html>" :: Lazy.Text
 -- >>> markup ^? htmlWith False
 -- Just (NodeElement (Element {eltName = "html", eltAttrs = fromList [], eltChildren = [NodeElement (Element {eltName = "head", eltAttrs = fromList [], eltChildren = [NodeElement (Element {eltName = "title", eltAttrs = fromList [], eltChildren = [NodeContent "My Page"]})]}),NodeElement (Element {eltName = "body", eltAttrs = fromList [], eltChildren = [NodeElement (Element {eltName = "blink", eltAttrs = fromList [], eltChildren = [NodeContent "Hello, world!"]})]})]}))
 -- >>> (markup ^? htmlWith False) ^. _Just . re (htmlWith False) == markup
 -- True
--- 
+--
 -- The provided boolean specifies whether named entities should be
 -- translated to unicode. For a less general version of this prism,
 -- with translation by default, see 'html.'
--- 
+--
 -- >>> (True, False) & both %~ \convert -> "<span>&hearts;</span>" ^? htmlWith convert . element . contents
--- (Just "\9829", Just "&hearts;")
--- 
+-- (Just "\9829",Just "&hearts;")
+--
 -- The parser produces a single node; if markup describes more than one element at
 -- the top-level, all but the first are discarded.
--- 
+--
 -- >>> (markup <> markup) ^? htmlWith False == markup ^? htmlWith False
 -- True
 
-htmlWith :: Bool -> Prism' Lazy.Text Node 
+htmlWith :: Bool -> Prism' Lazy.Text Node
 htmlWith convertEntities = prism' (renderWith convertEntities)  parse
   where parse = preview (ix 0) . domify . taggyWith convertEntities
 
 -- | Like 'htmlWith', but converts named entities by default.
--- 
+--
+-- >>> let markup = "<html><head><title>My Page</title></head><body><blink>Hello, world!</blink></body></html>" :: Lazy.Text
 -- >>> markup ^? htmlWith True == markup ^? html
 -- True
 
@@ -76,11 +86,11 @@ name f el = f (eltName el) <&> \n -> el {eltName=n}
 -- >>> markup ^? html . element . attrs
 -- Just fromList [("xmlns","http://www.w3.org/1999/xhtml")]
 -- >>> markup ^? html . element . attrs . at "xmlns" & join
--- Just "http://www.w3.org/1999/xhtml
+-- Just "http://www.w3.org/1999/xhtml"
 -- >>> markup ^? html . element . attrs . at "style" & join
 -- Nothing
 -- >>> markup & html . element . attrs . at "xmlns" ?~ "http://www.w3.org/TR/html4/"
--- "<html xmlns=\"http://www.w3.org/TR/html4/\"><title>My Page</title></head><body><blink>Hello, world!</blink></body></html>"
+-- "<html xmlns=\"http://www.w3.org/TR/html4/\"><head></head><body></body></html>"
 
 attrs :: Lens' Element (HashMap Text Text)
 attrs f el = f (eltAttrs el) <&> \as -> el {eltAttrs=as}
@@ -89,7 +99,7 @@ attrs f el = f (eltAttrs el) <&> \as -> el {eltAttrs=as}
 --
 -- >>> let markup = "<html><foo class=\"a\"></foo><bar class=\"b\"></bar></html>" :: Lazy.Text
 -- >>> markup ^.. htmlWith False . elements . attr "class" . _Just
--- ["a", "b"]
+-- ["a","b"]
 
 attr :: Text -> Lens' Element (Maybe Text)
 attr = fmap attrs . at
@@ -98,7 +108,7 @@ attr = fmap attrs . at
 --
 -- >>> let markup = "<html><foo class=\"a\"></foo><bar class=\"a\"></bar></html>" :: Lazy.Text
 -- >>> markup ^.. htmlWith False . elements . attributed (ix "class" . only "a") . name
--- ["foo", "bar"]
+-- ["foo","bar"]
 
 attributed :: Fold (HashMap Text Text) a -> Traversal' Element Element
 attributed prop = filtered . has $ attrs . prop
@@ -107,7 +117,7 @@ attributed prop = filtered . has $ attrs . prop
 --
 -- >>> let markup = "<html><title>Your title goes here.</title><body>Your content goes here.</body></html>" :: Lazy.Text
 -- >>> markup ^? html . element . children . ix 0
--- Just (NodeElement (Element {eltName = "head", eltAttrs = fromList [], eltChildren = [NodeElement (Element {eltName = "title", eltAttrs = fromList [], eltChildren = [NodeContent "Your content goes here."]})]}))
+-- Just (NodeElement (Element {eltName = "title", eltAttrs = fromList [], eltChildren = [NodeContent "Your title goes here."]}))
 -- >>> markup & html . element . children . ix 0 . element . children .~ [NodeContent "Lenses!"]
 -- "<html><title>Lenses!</title><body>Your content goes here.</body></html>"
 
@@ -117,8 +127,8 @@ children f el = f (eltChildren el) <&> \cs -> el {eltChildren = cs}
 -- | A traversal into elements with a name matching a provided property.
 --
 -- >>> let markup = "<html><foo>bar</foo><baz>qux</baz><quux>corge</quux></html>" :: Lazy.Text
--- >>> markup ^.. htmlWith False . elements . named (to length . only 3) . name
--- ["foo", "baz"]
+-- >>> markup ^.. htmlWith False . elements . named (to T.length . only 3) . name
+-- ["foo","baz"]
 
 named :: Fold Text a -> Traversal' Element Element
 named prop = filtered . has $ name . prop
@@ -128,25 +138,25 @@ named prop = filtered . has $ name . prop
 -- >>> let markup = "<html><head><title>My Page</title></head><body><blink>Hello, world!</blink></body></html>" :: Lazy.Text
 -- >>> markup ^? html . element
 -- Just (Element {eltName = "html", eltAttrs = fromList [], eltChildren = [NodeElement (Element {eltName = "head", eltAttrs = fromList [], eltChildren = [NodeElement (Element {eltName = "title", eltAttrs = fromList [], eltChildren = [NodeContent "My Page"]})]}),NodeElement (Element {eltName = "body", eltAttrs = fromList [], eltChildren = [NodeElement (Element {eltName = "blink", eltAttrs = fromList [], eltChildren = [NodeContent "Hello, world!"]})]})]})
--- >>> markup ^? html . element ^. to fromJust . re element == markup ^? html
+-- >>> markup ^? html . element. re element == markup ^? html
 -- True
 
 class HasElement a where
   element :: Prism' a Element
 
 instance HasElement Node where
-  element = prism' NodeElement $ \case { NodeElement e -> Just e; _ -> Nothing } 
+  element = prism' NodeElement $ \case { NodeElement e -> Just e; _ -> Nothing }
 
 instance HasElement Element where -- Iso
   element = prism' id (Just . id)
 
 -- | A traversal into the immediate children of an element that are also elements, directly or via a Node.
--- 
+--
 -- >>> let markup = "<html><foo></foo><bar></bar><baz></baz></html>" :: Lazy.Text
--- >>> markup ^.. html . element . elements . traverse . name
--- ["foo", "bar", "baz"]
--- >>> markup ^.. html . elements . traverse . name
--- ["foo", "bar", "baz"]
+-- >>> markup ^.. html . element . elements . name
+-- ["foo","bar","baz"]
+-- >>> markup ^.. html . elements . element . name
+-- ["foo","bar","baz"]
 
 class HasElements a where
   elements :: Traversal' a Element
@@ -172,9 +182,9 @@ content = prism' NodeContent $ \case { NodeContent c -> Just c; _ -> Nothing }
 --
 -- >>> let markup = "<html><foo></foo>bar<baz></baz>qux</html>" :: Lazy.Text
 -- >>> markup ^.. html . element . contents
--- ["bar", "qux"]
+-- ["bar","qux"]
 -- >>> markup ^.. html . contents
--- ["bar", "qux"]
+-- ["bar","qux"]
 
 class HasContent a where
   contents :: Traversal' a Text
@@ -187,8 +197,8 @@ instance HasContent Node where
 
 -- | Plated instances are available for Element and Node, such that we can retrieve all of their transitive descendants.
 --
--- >>> let markup' = "<html><foo>foo</foo>bar<baz></baz>qux</html>" 
--- >>> markup' ^.. html . to universe . traverse . content 
+-- >>> let markup' = "<html><foo>foo</foo>bar<baz></baz>qux</html>" :: Lazy.Text
+-- >>> markup' ^.. html . to universe . traverse . content
 -- ["foo","bar","qux"]
 
 instance Plated Node where
@@ -199,9 +209,9 @@ instance Plated Element where
 
 -- | A fold into all elements (current and descendants) who's name satisfy a provided property.
 --
--- >>> let markup' = "<html><foo>bar<qux><foo>baz</foo></qux></foo></html>" 
--- >>> markup' ^.. html . allNamed (only "foo") . contents 
--- ["bar", "baz"]
+-- >>> let markup' = "<html><foo class=\"woah\">bar<qux><foo>baz</foo></qux></foo></html>" :: Lazy.Text
+-- >>> markup' ^.. html . allNamed (only "foo") . contents
+-- ["bar","baz"]
 -- >>> markup' ^.. html . allNamed (only "foo") . attributed (ix "class" . only "woah") . contents
 -- ["bar"]
 
@@ -210,10 +220,10 @@ allNamed prop = element . to universe . traverse . named prop
 
 -- | A fold into all elements (current and descendants) who's attributes satisfy a provided property.
 --
--- >>> let markup' = "<html><foo class=\"woah\">bar<qux class=\"woah\"></qux></foo><quux class=\"woah\"></quux></html>"
--- >>> markup' ^.. html . allAttributed (folded . only "woah") . name 
--- ["foo", "qux", "quux"]
--- >>> markup' ^.. html . allAttributed (folded . only "woah") . name (only "foo") . name 
+-- >>> let markup' = "<html><foo class=\"woah\">bar<qux class=\"woah\"></qux></foo><quux class=\"woah\"></quux></html>" :: Lazy.Text
+-- >>> markup' ^.. html . allAttributed (folded . only "woah") . name
+-- ["foo","qux","quux"]
+-- >>> markup' ^.. html . allAttributed (folded . only "woah") . named (only "foo") . name
 -- ["foo"]
 
 allAttributed :: HasElement a => Fold (HashMap Text Text) b -> Fold a Element
