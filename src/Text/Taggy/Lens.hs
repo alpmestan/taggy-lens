@@ -129,8 +129,14 @@ named prop = filtered . has $ name . prop
 -- >>> markup ^? html . element ^. to fromJust . re element == markup ^? html
 -- True
 
-element :: Prism' Node Element
-element =  prism' NodeElement $ \case { NodeElement e -> Just e; _ -> Nothing }
+class HasElement a where
+  element :: Prism' a Element
+
+instance HasElement Node where
+  element = prism' NodeElement $ \case { NodeElement e -> Just e; _ -> Nothing } 
+
+instance HasElement Element where -- Iso
+  element = prism' id (Just . id)
 
 -- | A traversal into the immediate children of an element that are also elements, directly or via a Node.
 -- 
@@ -189,20 +195,24 @@ instance Plated Node where
 instance Plated Element where
   plate = elements
 
--- | A fold into all descendant elements who's name satisfy a provided property.
+-- | A fold into all elements (current and descendants) who's name satisfy a provided property.
 --
 -- >>> let markup' = "<html><foo>bar<qux><foo>baz</foo></qux></foo></html>" 
 -- >>> markup' ^.. html . allNamed (only "foo") . contents 
 -- ["bar", "baz"]
+-- >>> markup' ^.. html . allNamed (only "foo") . attributed (ix "class" . only "woah") . contents
+-- ["bar"]
 
-allNamed :: HasElements a => Fold Text b -> Fold a Element
-allNamed prop = elements . to universe . traverse . named prop
+allNamed :: HasElement a => Fold Text b -> Fold a Element
+allNamed prop = element . to universe . traverse . named prop
 
--- | A fold into all descendant elements who's attributes satisfy a provided property.
+-- | A fold into all elements (current and descendants) who's attributes satisfy a provided property.
 --
 -- >>> let markup' = "<html><foo class=\"woah\">bar<qux class=\"woah\"></qux></foo><quux class=\"woah\"></quux></html>"
 -- >>> markup' ^.. html . allAttributed (folded . only "woah") . name 
 -- ["foo", "qux", "quux"]
+-- >>> markup' ^.. html . allAttributed (folded . only "woah") . name (only "foo") . name 
+-- ["foo"]
 
-allAttributed :: HasElements a => Fold (HashMap Text Text) b -> Fold a Element
-allAttributed prop = elements . to universe . traverse . attributed prop
+allAttributed :: HasElement a => Fold (HashMap Text Text) b -> Fold a Element
+allAttributed prop = element . to universe . traverse . attributed prop

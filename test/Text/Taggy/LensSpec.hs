@@ -3,7 +3,7 @@
 module Text.Taggy.LensSpec (spec) where
 
 import Prelude hiding (elem, length)
-import Control.Lens ((^.),(.~),at,(^?),re,_Just,(&),(?~),to,folded,(^..),only,traverse,universe)
+import Control.Lens ((^.),(.~),at,(^?),re,_Just,(&),(?~),to,folded,(^..),only,traverse,universe,ix)
 import Data.HashMap.Strict (fromList)
 import Data.Monoid ((<>))
 import Data.Text (isSuffixOf, length)
@@ -11,7 +11,7 @@ import Data.Text.Lazy (Text)
 import Text.Taggy.Lens (name, attrs, children, html, htmlWith, element, content, attr, attributed, named, contents, elements, allNamed, allAttributed)
 import Text.Taggy.DOM (domify, Element(..), Node(..))
 import Text.Taggy.Parser (taggyWith)
-import Test.Hspec (describe, it, shouldBe, Spec)
+import Test.Hspec (describe, it, shouldBe, shouldSatisfy, Spec)
 
 markup :: Text
 markup = "<html xmlns=\"http://www.w3.org/1999/xhtml\"></html>"
@@ -45,7 +45,7 @@ spec = do
   describe "named" $ do
     it "Should traverse only elements who's name matches a specific property." $ do
       let markup' = "<html><foo>bar</foo><baz>qux</baz><quux>corge</quux></html>"
-      markup' ^.. htmlWith False . elements . named (to length . only 3) . name `shouldBe` ["foo", "baz"]
+      markup' ^.. html . elements . named (to length . only 3) . name `shouldBe` ["foo", "baz"]
   describe "attrs" $ do
     it "Should get the attributes of a given element." $ do
       elem ^. attrs ^. at "xmlns" `shouldBe` Just "http://www.w3.org/1999/xhtml"
@@ -108,10 +108,18 @@ spec = do
     it "Should be able to retrieve all transitive descendants of a given node." $ do
       markup' ^.. html . element . to universe . traverse . name `shouldBe` ["html","foo","baz"]
   describe "allNamed" $ do
+    let markup' = "<html><foo>bar<qux><foo class=\"withBaz\">baz</foo></qux></foo></html>" 
     it "Should retrieve all nodes in a subtree who's name match a given predicate." $ do
-      let markup' = "<html><foo>bar<qux><foo>baz</foo></qux></foo></html>" 
       markup' ^.. html . allNamed (only "foo") . contents `shouldBe` ["bar", "baz"]
+    it "Should compose with other folds in a way that they filter on the parent, not its children." $ do
+      markup' ^.. html . allNamed (only "foo") . attributed (ix "class" . only "withBaz") . contents `shouldBe` ["baz"]
+    it "Provided a node, should not exclude the parent element in its traversal." $ do
+      markup  ^.. html . allNamed (only "html") `shouldSatisfy` not . null
+    it "Provided an element, should not exclude this in its traversal." $ do
+      markup ^.. html . element . allNamed (only "html") `shouldSatisfy` not . null
   describe "allAttributed" $ do
+    let markup' = "<html><foo class=\"woah\">bar<qux class=\"woah\"></qux></foo><quux class=\"woah\"></quux></html>"
     it "Should retrieve all nodes in a subtree who's attributes match a given predicate." $ do
-      let markup' = "<html><foo class=\"woah\">bar<qux class=\"woah\"></qux></foo><quux class=\"woah\"></quux></html>"
       markup' ^.. html . allAttributed (folded . only "woah") . name `shouldBe` ["foo", "qux", "quux"]
+    it "Should compose with other folds in a way that they filter on the parent, not its children." $ do
+      markup' ^.. html . allAttributed (ix "class" . only "woah") . named (only "foo") . name `shouldBe` ["foo"]
