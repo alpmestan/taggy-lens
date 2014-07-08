@@ -6,15 +6,13 @@ description:
   <http://hackage.haskell.org/package/taggy taggy>.
   .
   This greatly simplifies your life when dealing with
-  the ugly world of Real Life HTML. Here's an example
-  <https://github.com/alpmestan/taggy-lens/blob/master/example/HackageNew.hs
-  from the github repository>: it lists the date, author and package name of
+  the ugly world of Real Life HTML. Here's an
+  <https://github.com/alpmestan/taggy-lens/blob/master/example/HackageNew.hs example>. 
+  It lists the date, author and package name of
   all the /recent package uploads/ entries from the hackage page of the same name.
   Note that it uses <http://hackage.haskell.org/package/wreq wreq> to /fetch/ the
   Hackage page.
   .
-  > {-# LANGUAGE OverloadedStrings #-}
-  >
   > module Main (main) where
   >
   > import Control.Lens (to, only,(^?),ix, toListOf)
@@ -46,7 +44,9 @@ description:
   >                . html . allNamed (only "tr") . children . to table
   >
   > main :: IO ()
-  > main = get "https://hackage.haskell.org/packages/recent" >>= print `fmap` recentPackages 
+  > main = get "https://hackage.haskell.org/packages/recent" >>= print `fmap` recentPackages
+  .
+  Report any problem on our <http://github.com/alpmestan/taggy-lens/issues issues> page on github.
 homepage:      http://github.com/alpmestan/taggy-lens
 license:       BSD3
 license-file:  LICENSE
