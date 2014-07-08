@@ -1,10 +1,10 @@
 name:          taggy-lens-examples
-version:       0.1.0.0
+version:       0.1
 license:       BSD3
 license-file:  LICENSE
 author:        vi
 maintainer:    vi@zalora.com
-category:      Example
+category:      Web, Example
 build-type:    Simple
 cabal-version: >= 1.10
 

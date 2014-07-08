@@ -12,7 +12,11 @@ import Network.Wreq (responseBody, get)
 import Text.Taggy (Node)
 import Text.Taggy.Lens (html, elements, children, contents,allNamed)
 
-data Upload = Upload Text Text Text deriving (Show)
+data Upload = 
+  Upload Text -- ^ date
+         Text -- ^ author
+         Text -- ^ package name
+  deriving (Show)
 
 table :: [Node] -> Maybe Upload
 table row = do
