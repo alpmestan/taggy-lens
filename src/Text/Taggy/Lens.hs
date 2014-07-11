@@ -84,7 +84,7 @@ name f el = f (eltName el) <&> \n -> el {eltName=n}
 --
 -- >>> let markup = "<html xmlns=\"http://www.w3.org/1999/xhtml\"><head></head><body></body></html>" :: Lazy.Text
 -- >>> markup ^? html . element . attrs
--- Just fromList [("xmlns","http://www.w3.org/1999/xhtml")]
+-- Just (fromList [("xmlns","http://www.w3.org/1999/xhtml")])
 -- >>> markup ^? html . element . attrs . at "xmlns" & join
 -- Just "http://www.w3.org/1999/xhtml"
 -- >>> markup ^? html . element . attrs . at "style" & join
