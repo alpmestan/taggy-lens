@@ -2,23 +2,29 @@
 
 module Text.Taggy.LensSpec (spec) where
 
-import Prelude hiding (elem, length)
-import Control.Lens ((^.),(.~),at,(^?),re,_Just,(&),(?~),to,folded,(^..),only,traverse,universe,ix)
-import Data.HashMap.Strict (fromList)
-import Data.Monoid ((<>))
-import Data.Text (isSuffixOf, length)
-import Data.Text.Lazy (Text)
-import Text.Taggy.Lens (name, attrs, children, html, htmlWith, element, content, attr, attributed, named, contents, elements, allNamed, allAttributed)
-import Text.Taggy.DOM (domify, Element(..), Node(..))
-import Text.Taggy.Parser (taggyWith)
-import Test.Hspec (describe, it, shouldBe, shouldSatisfy, Spec)
+import           Control.Lens        (at, folded, ix, only, re, to, traverse,
+                                      universe, (&), (.~), (?~), (^.), (^..),
+                                      (^?), _Just)
+import           Data.HashMap.Strict (fromList)
+import           Data.Monoid         ((<>))
+import           Data.Text           (isSuffixOf, length)
+import           Data.Text.Lazy      (Text)
+import           Prelude             hiding (elem, length)
+import           Test.Hspec          (Spec, describe, it, shouldBe,
+                                      shouldSatisfy)
+import           Text.Taggy.DOM      (Element (..), Node (..), domify)
+import           Text.Taggy.Lens     (allAttributed, allNamed, attr, attributed,
+                                      attrs, children, content, contents,
+                                      element, elements, html, htmlWith, name,
+                                      named)
+import           Text.Taggy.Parser   (taggyWith)
 
 markup :: Text
 markup = "<html xmlns=\"http://www.w3.org/1999/xhtml\"></html>"
 
 node :: Node -- unsafe (head)
 node = head . domify $ taggyWith False markup
-  
+
 elem :: Element -- unsafe (partial)
 elem = (\(NodeElement e) -> e) node
 
@@ -94,21 +100,21 @@ spec = do
       NodeContent text ^? content `shouldBe` Just text
   describe "contents" $ do
     it "Should traverse the immediate children of an element that are text nodes directly." $ do
-      let markup' = "<html><foo></foo>bar<baz></baz>qux</html>" 
+      let markup' = "<html><foo></foo>bar<baz></baz>qux</html>"
       markup' ^.. html . element . contents `shouldBe` ["bar", "qux"]
     it "Should traverse the immediate children of an element that are text nodes, via a Node." $ do
-      let markup' = "<html><foo></foo>bar<baz></baz>qux</html>" 
+      let markup' = "<html><foo></foo>bar<baz></baz>qux</html>"
       markup' ^.. html . contents `shouldBe` ["bar", "qux"]
-  describe "validation of plated instance for node" $ do 
-    let markup' = "<html><foo>foo</foo>bar<baz></baz>qux</html>" 
+  describe "validation of plated instance for node" $ do
+    let markup' = "<html><foo>foo</foo>bar<baz></baz>qux</html>"
     it "Should be able to retrieve all transitive descendants of a given node." $ do
       markup' ^.. html . to universe . traverse . content `shouldBe` ["foo","bar","qux"]
   describe "validation of plated instance for element" $ do
-    let markup' = "<html><foo></foo>bar<baz></baz>qux</html>" 
+    let markup' = "<html><foo></foo>bar<baz></baz>qux</html>"
     it "Should be able to retrieve all transitive descendants of a given node." $ do
       markup' ^.. html . element . to universe . traverse . name `shouldBe` ["html","foo","baz"]
   describe "allNamed" $ do
-    let markup' = "<html><foo>bar<qux><foo class=\"withBaz\">baz</foo></qux></foo></html>" 
+    let markup' = "<html><foo>bar<qux><foo class=\"withBaz\">baz</foo></qux></foo></html>"
     it "Should retrieve all nodes in a subtree who's name match a given predicate." $ do
       markup' ^.. html . allNamed (only "foo") . contents `shouldBe` ["bar", "baz"]
     it "Should compose with other folds in a way that they filter on the parent, not its children." $ do

@@ -1,4 +1,5 @@
-{-# LANGUAGE LambdaCase, Rank2Types #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE Rank2Types #-}
 
 module Text.Taggy.Lens (
   Node(..),
@@ -19,11 +20,15 @@ module Text.Taggy.Lens (
   allAttributed
 ) where
 
-import Control.Lens (Lens', Prism', Traversal', Fold, prism', (<&>), preview, ix, at, has, filtered, traverse, Plated(..), to, universe)
-import Data.HashMap.Strict (HashMap)
-import Data.Text (Text)
-import Text.Taggy (Element(..), Node(..), Renderable(..), domify, taggyWith)
-import qualified Data.Text.Lazy as Lazy (Text)
+import           Control.Lens        (Fold, Lens', Plated (..), Prism',
+                                      Traversal', at, filtered, has, ix,
+                                      preview, prism', to, traverse, universe,
+                                      (<&>))
+import           Data.HashMap.Strict (HashMap)
+import           Data.Text           (Text)
+import qualified Data.Text.Lazy      as Lazy (Text)
+import           Text.Taggy          (Element (..), Node (..), Renderable (..),
+                                      domify, taggyWith)
 
 -- $setup
 -- >>> :set -XOverloadedStrings
@@ -92,7 +97,7 @@ name f el = f (eltName el) <&> \n -> el {eltName=n}
 -- >>> markup & html . element . attrs . at "xmlns" ?~ "http://www.w3.org/TR/html4/"
 -- "<html xmlns=\"http://www.w3.org/TR/html4/\"><head></head><body></body></html>"
 
-attrs :: Lens' Element (HashMap Text Text)
+attrs :: Lens' Element (HashMap Text [Text])
 attrs f el = f (eltAttrs el) <&> \as -> el {eltAttrs=as}
 
 -- | Given an attribute name, a lens into its value for a given element.
@@ -101,7 +106,7 @@ attrs f el = f (eltAttrs el) <&> \as -> el {eltAttrs=as}
 -- >>> markup ^.. htmlWith False . elements . attr "class" . _Just
 -- ["a","b"]
 
-attr :: Text -> Lens' Element (Maybe Text)
+attr :: Text -> Lens' Element (Maybe [Text])
 attr = fmap attrs . at
 
 -- | A traversal into attributes matching a provided property.
@@ -110,7 +115,7 @@ attr = fmap attrs . at
 -- >>> markup ^.. htmlWith False . elements . attributed (ix "class" . only "a") . name
 -- ["foo","bar"]
 
-attributed :: Fold (HashMap Text Text) a -> Traversal' Element Element
+attributed :: Fold (HashMap Text [Text]) a -> Traversal' Element Element
 attributed prop = filtered . has $ attrs . prop
 
 -- | A lens into the child nodes, elements, or contents of a given DOM element.
@@ -226,5 +231,5 @@ allNamed prop = element . to universe . traverse . named prop
 -- >>> markup' ^.. html . allAttributed (folded . only "woah") . named (only "foo") . name
 -- ["foo"]
 
-allAttributed :: HasElement a => Fold (HashMap Text Text) b -> Fold a Element
+allAttributed :: HasElement a => Fold (HashMap Text [Text]) b -> Fold a Element
 allAttributed prop = element . to universe . traverse . attributed prop
