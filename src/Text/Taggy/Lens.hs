@@ -102,7 +102,7 @@ attrs f el = f (eltAttrs el) <&> \as -> el {eltAttrs=as}
 -- ["a","b"]
 
 attr :: Text -> Lens' Element (Maybe Text)
-attr = fmap attrs . at
+attr k = attrs . at k
 
 -- | A traversal into attributes matching a provided property.
 --
